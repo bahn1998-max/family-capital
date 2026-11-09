@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Финансовый капитал Бахаровских</title>
+<style>
+  :root {
+    --bg: #0b1120; --card: #1e293b; --text: #f8fafc; --muted: #94a3b8;
+    --border: #334155; --active-green: #10b981; --passive-green: #34d399;
+    --red-exp: #f87171; --purple-sav: #a78bfa;
+    --nikita: #3b82f6; --liza: #ec4899;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { background: var(--bg); color: var(--text); padding-bottom: 20px; }
+
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  /* Шапка */
+  header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); }
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 30px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; letter-spacing: 0.5px; }
+  .logo-title { font-size: 13px; font-weight: 800; letter-spacing: -0.2px; color: var(--text); white-space: nowrap; }
+  
+  .date-selectors { display: flex; gap: 4px; }
+  .date-selectors select { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 4px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; outline: none; cursor: pointer;}
+  
+  main { padding: 10px; display: flex; flex-direction: column; gap: 10px; max-width: 600px; margin: 0 auto; }
+
+  /* ВЕРХНЯЯ ПАНЕЛЬ */
+  .top-summary { background: var(--card); border-radius: 10px; padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border: 1px solid var(--border); }
+  .sum-item { padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border-left: 3px solid transparent; display: flex; flex-direction: column; gap: 4px;}
+  .sum-item.act { border-left-color: var(--active-green); }
+  .sum-item.pas { border-left-color: var(--passive-green); }
+  .sum-item.exp { border-left-color: var(--red-exp); }
+  .sum-item.sav { border-left-color: var(--purple-sav); }
+  
+  .sum-title { font-size: 10px; text-transform: uppercase; font-weight: 800; color: var(--muted); }
+  .sum-main-val { font-size: 18px; font-weight: 900; color: var(--text); line-height: 1.1;}
+  .sum-sub-val { font-size: 10px; font-weight: 600; color: #64748b; }
+
+  /* Вкладки */
+  .main-tabs { display: flex; background: var(--card); border-radius: 8px; padding: 3px; border: 1px solid var(--border); position: sticky; top: 51px; z-index: 9;}
+  .m-tab { flex: 1; padding: 6px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .m-tab.active { background: var(--border); color: var(--text); }
+  .m-tab.active[data-user="nikita"] { background: var(--nikita); color: white; }
+  .m-tab.active[data-user="liza"] { background: var(--liza); color: white; }
+
+  /* Карточки блоков */
+  .card { background: var(--card); border-radius: 10px; padding: 8px; border: 1px solid var(--border); margin-bottom: 6px;}
+  
+  /* ЕДИНАЯ ЖЕСТКАЯ СЕТКА ДЛЯ ВСЕГО (Заголовок, Итог, Строки) */
+  .grid-layout { 
+    display: grid; 
+    /* Название | План | Факт | Разница | Крестик */
+    grid-template-columns: 1fr 55px 55px 55px 14px; 
+    gap: 4px; 
+    align-items: center; 
+  }
+  
+  /* Строка с заголовком и итогами */
+  .header-summary-row { 
+    margin-bottom: 6px; 
+    padding-bottom: 4px;
+    border-bottom: 1px dashed rgba(255,255,255,0.1);
+  }
+  
+  /* Название раздела внутри сетки */
+  .section-title-inline { 
+    font-size: 10px; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 0.3px; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px;
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;}
+  
+  .act-color { color: var(--active-green); } .act-color .dot { background: var(--active-green); }
+  .pas-color { color: var(--passive-green); } .pas-color .dot { background: var(--passive-green); }
+  .exp-color { color: var(--red-exp); } .exp-color .dot { background: var(--red-exp); }
+  .sav-color { color: var(--purple-sav); } .sav-color .dot { background: var(--purple-sav); }
+
+  /* Итоговые цифры */
+  .s-plan { text-align: right; color: #94a3b8; font-weight: 700; font-size: 11px; }
+  .s-fact { text-align: right; color: var(--text); font-weight: 900; font-size: 12px;}
+  .s-diff { text-align: right; color: #94a3b8; font-weight: 700; font-size: 11px; }
+
+  /* Заголовки колонок */
+  .header-labels {
+    font-size: 8px; 
+    color: var(--muted); 
+    text-transform: uppercase; 
+    font-weight: 700; 
+    text-align: right;
+    margin-bottom: 2px;
+  }
+  .header-labels div:first-child { text-align: left; }
+
+  /* Строки данных */
+  .cat-row { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-name { font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  /* Поля ввода */
+  .cat-input { width: 100%; padding: 3px 4px; border-radius: 4px; font-size: 11px; text-align: right; outline: none; font-weight: 600; transition: 0.2s;}
+  .input-plan { background: transparent; border: 1px solid transparent; color: #64748b; }
+  .input-plan:focus { border-bottom: 1px solid #64748b; }
+  .input-fact { background: #0f172a; border: 1px solid #3b82f6; color: #ffffff; font-weight: 800; font-size: 12px; }
+  .input-fact:focus { border-color: #60a5fa; }
+  
+  .diff-val { font-size: 10px; font-weight: 500; color: #94a3b8; text-align: right; }
+  
+  /* Крестик */
+  .btn-del { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 0; opacity: 0.15; transition: 0.2s; line-height: 1; text-align: center;}
+  .btn-del:hover { opacity: 1; color: var(--red-exp); }
+
+  /* Кнопка добавления */
+  .btn-add { width: 100%; padding: 4px; border-radius: 4px; font-weight: 700; font-size: 10px; cursor: pointer; margin-top: 6px; border: 1px dashed var(--border); background: transparent; color: var(--muted); transition: 0.2s;}
+  .btn-add:hover { border-color: var(--text); color: var(--text); }
+  
+  .content-section { display: none; }
+  .content-section.active { display: block; }
+
+  @media (max-width: 380px) {
+    .logo-title { font-size: 11px; }
+    .grid-layout, .header-labels { grid-template-columns: 1fr 45px 45px 45px 12px; gap: 2px; }
+    .section-title-inline { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">ФКБ</div>
+    <div class="logo-title">Финансовый капитал Бахаровских</div>
+  </div>
+  <div class="date-selectors">
+    <select id="month-select" onchange="changeDate()">
+      <option value="0">Янв</option><option value="1">Фев</option>
+      <option value="2">Мар</option><option value="3">Апр</option>
+      <option value="4">Май</option><option value="5">Июн</option>
+      <option value="6">Июл</option><option value="7">Авг</option>
+      <option value="8">Сен</option><option value="9">Окт</option>
+      <option value="10">Ноя</option><option value="11">Дек</option>
+    </select>
+    <select id="year-select" onchange="changeDate()">
+      <option value="2025">2025</option>
+      <option value="2026">2026</option>
+      <option value="2027">2027</option>
+    </select>
+  </div>
+</header>
+
+<main>
+  <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+  <div class="top-summary">
+    <div class="sum-item act">
+      <div class="sum-title">Активные доходы</div>
+      <div class="sum-main-val" id="gen-inc-act-fact">0 ₽</div>
+      <div class="sum-sub-val">План: <span id="gen-inc-act-plan">0 ₽</span></div>
+    </div>
+    <div class="sum-item pas">
+      <div class="sum-title">Пассивные доходы</div>
+      <div class="sum-main-val" id="gen-inc-pas-fact">0 ₽</div>
+      <div class="sum-sub-val">План: <span id="gen-inc-pas-plan">0 ₽</span></div>
+    </div>
+    <div class="sum-item exp">
+      <div class="sum-title">Расходы</div>
+      <div class="sum-main-val" id="gen-exp-fact">0 ₽</div>
+      <div class="sum-sub-val">План: <span id="gen-exp-plan">0 ₽</span></div>
+    </div>
+    <div class="sum-item sav">
+      <div class="sum-title">Накопления</div>
+      <div class="sum-main-val" id="gen-sav-fact">0 ₽</div>
+      <div class="sum-sub-val">План: <span id="gen-sav-plan">0 ₽</span></div>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКИ -->
+  <div class="main-tabs">
+    <div class="m-tab active" data-user="nikita" onclick="switchUser('nikita')">Никита</div>
+    <div class="m-tab" data-user="liza" onclick="switchUser('liza')">Лиза</div>
+  </div>
+
+  <!-- СЕКЦИЯ: НИКИТА -->
+  <div id="section-nikita" class="content-section active">
+    
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="nk-sum-inc-act"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="nk-list-inc-act"></div>
+      <button class="btn-add" onclick="addCat('nikita', 'inc_act')">+ Добавить</button>
+    </div>
+    
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="nk-sum-inc-pas"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="nk-list-inc-pas"></div>
+      <button class="btn-add" onclick="addCat('nikita', 'inc_pas')">+ Добавить</button>
+    </div>
+
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="nk-sum-exp"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="nk-list-exp"></div>
+      <button class="btn-add" onclick="addCat('nikita', 'exp')">+ Добавить</button>
+    </div>
+
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="nk-sum-sav"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="nk-list-sav"></div>
+      <button class="btn-add" onclick="addCat('nikita', 'sav')">+ Добавить</button>
+    </div>
+  </div>
+
+  <!-- СЕКЦИЯ: ЛИЗА -->
+  <div id="section-liza" class="content-section">
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="lz-sum-inc-act"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="lz-list-inc-act"></div>
+      <button class="btn-add" onclick="addCat('liza', 'inc_act')">+ Добавить</button>
+    </div>
+    
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="lz-sum-inc-pas"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="lz-list-inc-pas"></div>
+      <button class="btn-add" onclick="addCat('liza', 'inc_pas')">+ Добавить</button>
+    </div>
+
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="lz-sum-exp"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="lz-list-exp"></div>
+      <button class="btn-add" onclick="addCat('liza', 'exp')">+ Добавить</button>
+    </div>
+
+    <div class="card">
+      <div class="grid-layout header-summary-row" id="lz-sum-sav"></div>
+      <div class="header-labels grid-layout"><div>Название</div><div>План</div><div>Факт</div><div>Разница</div><div></div></div>
+      <div id="lz-list-sav"></div>
+      <button class="btn-add" onclick="addCat('liza', 'sav')">+ Добавить</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  const TEMPLATE = {
+    nikita: {
+      inc_act: [{ name: 'ДД', plan: 83000 }, { name: 'Поднаем', plan: 75000 }],
+      inc_pas: [{ name: '% по вкладам', plan: 16000 }, { name: 'Аренда', plan: 35000 }, { name: 'Дивы и купоны', plan: 10000 }],
+      exp: [{ name: 'Квартира', plan: 23500 }, { name: 'Продукты', plan: 12500 }],
+      sav: [{ name: 'ИИС', plan: 33000 }, { name: 'Накопительный счет', plan: 30000 }]
+    },
+    liza: {
+      inc_act: [{ name: 'Зарплата', plan: 100000 }],
+      inc_pas: [],
+      exp: [{ name: 'Продукты', plan: 12500 }],
+      sav: []
+    }
+  };
+
+  let DB = {};
+
+  function initMonth(year, month) {
+    if (!DB[year]) DB[year] = {};
+    if (!DB[year][month]) {
+      DB[year][month] = { nikita: { inc_act: [], inc_pas: [], exp: [], sav: [] }, liza: { inc_act: [], inc_pas: [], exp: [], sav: [] } };
+      ['nikita', 'liza'].forEach(u => {
+        ['inc_act', 'inc_pas', 'exp', 'sav'].forEach(type => {
+          DB[year][month][u][type] = TEMPLATE[u][type].map((c, i) => ({
+            id: `${u}-${type}-${Date.now()}-${i}`, name: c.name, plan: c.plan, fact: 0
+          }));
+        });
+      });
+      if(year === '2026' && month === '8') {
+        DB[year][month].nikita.inc_pas[0].fact = 12000; 
+        DB[year][month].nikita.exp[0].fact = 23500; 
+        DB[year][month].nikita.exp[1].fact = 10000; 
+        DB[year][month].liza.inc_act[0].fact = 100000; 
+        DB[year][month].liza.exp[0].fact = 8000; 
+      }
+    }
+  }
+
+  let currentYear = '2026';
+  let currentMonth = '8';
+  
+  document.getElementById('year-select').value = currentYear;
+  document.getElementById('month-select').value = currentMonth;
+
+  const fmtNum = n => new Intl.NumberFormat('ru-RU').format(Math.round(n));
+
+  function changeDate() {
+    currentYear = document.getElementById('year-select').value;
+    currentMonth = document.getElementById('month-select').value;
+    initMonth(currentYear, currentMonth);
+    updateAll();
+  }
+
+  function evalMath(expr) {
+    const cleanExpr = String(expr).replace(/[^0-9+\-*/().]/g, '');
+    if(!cleanExpr) return 0;
+    try { return Number(Function(`"use strict"; return (${cleanExpr})`)()) || 0; } 
+    catch(e) { return Number(expr) || 0; }
+  }
+
+  function formatInputValue(val) {
+    const num = evalMath(val);
+    return num === 0 ? '' : fmtNum(num);
+  }
+
+  function switchUser(user) {
+    document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.m-tab[data-user="${user}"]`).classList.add('active');
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + user).classList.add('active');
+    updateAll();
+  }
+
+  function renderList(user, type, containerId) {
+    const box = document.getElementById(containerId);
+    if(!box) return;
+    box.innerHTML = '';
+    
+    const data = DB[currentYear][currentMonth][user][type] || [];
+    const isIncome = type.includes('inc');
+
+    data.forEach(cat => {
+      let diff = isIncome ? (cat.fact - cat.plan) : (cat.plan - cat.fact);
+      let diffText = (diff > 0 ? '+' : '') + fmtNum(diff);
+      if(cat.plan === 0 && cat.fact === 0) diffText = '—';
+
+      box.innerHTML += `
+        <div class="grid-layout cat-row">
+          <div class="cat-name" title="${cat.name}">${cat.name}</div>
+          <input type="text" class="cat-input input-plan" placeholder="0" value="${formatInputValue(cat.plan)}" onchange="updateVal('${user}', '${type}', '${cat.id}', 'plan', this.value)">
+          <input type="text" class="cat-input input-fact" placeholder="0" value="${formatInputValue(cat.fact)}" onchange="updateVal('${user}', '${type}', '${cat.id}', 'fact', this.value)">
+          <div class="diff-val">${diffText}</div>
+          <button class="btn-del" onclick="deleteCat('${user}', '${type}', '${cat.id}')">×</button>
+        </div>
+      `;
+    });
+  }
+
+  // Отрисовка шапки с суммами (Всё в одну строку)
+  function renderHeaderSummary(user, type, containerId) {
+    const box = document.getElementById(containerId);
+    if(!box) return;
+    
+    const data = DB[currentYear][currentMonth][user][type] || [];
+    let totalPlan = 0;
+    let totalFact = 0;
+    const isIncome = type.includes('inc');
+
+    data.forEach(c => { totalPlan += c.plan; totalFact += c.fact; });
+
+    let totalDiff = isIncome ? (totalFact - totalPlan) : (totalPlan - totalFact);
+    let diffText = (totalDiff > 0 ? '+' : '') + fmtNum(totalDiff);
+    if(totalPlan === 0 && totalFact === 0) diffText = '—';
+
+    // Определяем цвет для заголовка в зависимости от типа
+    let titleClass = type.includes('inc_act') ? 'act-color' : 
+                     type.includes('inc_pas') ? 'pas-color' : 
+                     type.includes('exp') ? 'exp-color' : 'sav-color';
+    let titleText = type.includes('inc_act') ? 'Активные доходы' : 
+                    type.includes('inc_pas') ? 'Пассивные доходы' : 
+                    type.includes('exp') ? 'Расходы' : 'Накопления';
+
+    box.innerHTML = `
+      <div class="section-title-inline ${titleClass}"><span class="dot"></span> ${titleText}</div>
+      <div class="s-plan">${fmtNum(totalPlan)}</div>
+      <div class="s-fact">${fmtNum(totalFact)}</div>
+      <div class="s-diff">${diffText}</div>
+      <div></div>
+    `;
+  }
+
+  function updateVal(user, type, id, field, val) {
+    const cat = DB[currentYear][currentMonth][user][type].find(c => c.id === id);
+    if(!cat) return;
+    cat[field] = evalMath(val);
+    updateAll();
+  }
+
+  function deleteCat(user, type, id) {
+    if(!confirm('Удалить категорию?')) return;
+    DB[currentYear][currentMonth][user][type] = DB[currentYear][currentMonth][user][type].filter(c => c.id !== id);
+    updateAll();
+  }
+
+  function addCat(user, type) {
+    const name = prompt("Название категории:");
+    if(!name) return;
+    const newCat = { id: Date.now().toString(), name: name, plan: 0, fact: 0 };
+    DB[currentYear][currentMonth][user][type].push(newCat);
+    updateAll();
+  }
+
+  function updateAll() {
+    const data = DB[currentYear][currentMonth];
+
+    ['nikita', 'liza'].forEach(u => {
+      const p = u === 'nikita' ? 'nk' : 'lz';
+      
+      renderList(u, 'inc_act', `${p}-list-inc-act`);
+      renderHeaderSummary(u, 'inc_act', `${p}-sum-inc-act`);
+      
+      renderList(u, 'inc_pas', `${p}-list-inc-pas`);
+      renderHeaderSummary(u, 'inc_pas', `${p}-sum-inc-pas`);
+      
+      renderList(u, 'exp', `${p}-list-exp`);
+      renderHeaderSummary(u, 'exp', `${p}-sum-exp`);
+      
+      renderList(u, 'sav', `${p}-list-sav`);
+      renderHeaderSummary(u, 'sav', `${p}-sum-sav`);
+    });
+
+    let gIncActPlan = 0, gIncActFactN = 0, gIncActFactL = 0;
+    let gIncPasPlan = 0, gIncPasFactN = 0, gIncPasFactL = 0;
+    let gExpPlan = 0, gExpFactN = 0, gExpFactL = 0;
+    let gSavPlan = 0, gSavFactN = 0, gSavFactL = 0;
+
+    data.nikita.inc_act.forEach(c => { gIncActPlan += c.plan; gIncActFactN += c.fact; });
+    data.nikita.inc_pas.forEach(c => { gIncPasPlan += c.plan; gIncPasFactN += c.fact; });
+    data.nikita.exp.forEach(c => { gExpPlan += c.plan; gExpFactN += c.fact; });
+    data.nikita.sav.forEach(c => { gSavPlan += c.plan; gSavFactN += c.fact; });
+
+    data.liza.inc_act.forEach(c => { gIncActPlan += c.plan; gIncActFactL += c.fact; });
+    data.liza.inc_pas.forEach(c => { gIncPasPlan += c.plan; gIncPasFactL += c.fact; });
+    data.liza.exp.forEach(c => { gExpPlan += c.plan; gExpFactL += c.fact; });
+    data.liza.sav.forEach(c => { gSavPlan += c.plan; gSavFactL += c.fact; });
+
+    document.getElementById('gen-inc-act-fact').textContent = fmtNum(gIncActFactN + gIncActFactL) + ' ₽';
+    document.getElementById('gen-inc-act-plan').textContent = fmtNum(gIncActPlan);
+
+    document.getElementById('gen-inc-pas-fact').textContent = fmtNum(gIncPasFactN + gIncPasFactL) + ' ₽';
+    document.getElementById('gen-inc-pas-plan').textContent = fmtNum(gIncPasPlan);
+
+    document.getElementById('gen-exp-fact').textContent = fmtNum(gExpFactN + gExpFactL) + ' ₽';
+    document.getElementById('gen-exp-plan').textContent = fmtNum(gExpPlan);
+
+    document.getElementById('gen-sav-fact').textContent = fmtNum(gSavFactN + gSavFactL) + ' ₽';
+    document.getElementById('gen-sav-plan').textContent = fmtNum(gSavPlan);
+  }
+
+  initMonth(currentYear, currentMonth);
+  updateAll();
+</script>
+</body>
+</html>
